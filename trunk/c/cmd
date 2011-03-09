@@ -1,0 +1,2 @@
+
+g++ Detection.cpp Face.cpp Webcam.cpp main.cpp -o detourage  -lcv -lhighgui -lcvaux
