@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
 import cv, os, sys
+import write_arff
 import commands
 import math
-import write_arff
+import copy
 
 # Notre .arff est une variable global
 arf = None
@@ -16,6 +17,7 @@ NORM_H = 128
 path = "../haarcascades/"
 image_path = "../../images/"
 norm_path = "../../norm/"
+dnorm_path = "../../dnorm/"
 result = "../../result/"
 traitement_path = "../../traitement/"
 
@@ -62,9 +64,9 @@ def auto(path):
 	liste = liste.split('\n')
 	for line in liste:
 		line = line.split('/')
-		line = line[3]+"/"+line[4]
-		print line
-		res.append(line)
+		path = line[len(line)-2]+"/"+line[len(line)-1]
+		#print path
+		res.append(path)
 	return res
 
 # Boucle d'appel pour le traitement des images :
@@ -88,7 +90,7 @@ def traitement_loop(liste):
 	print "TRAITEMENT"
 	for image in liste:
 		print "Traitement de l'image "+str(image)+" en cours"
-		traitement(image)
+		traitements(image)
 	print "FIN TRAITEMENT"
 
 # Detection des yeux, nez et bouche
@@ -154,8 +156,8 @@ def affichage_mouth(dmouth, img, a=0, b=0):
 	for (x,y,w,h),n in dmouth: 
 		cv.Rectangle(img, (x+a,y+b), (x+w+a,y+h+b), jaune)
 def affichage_corners(dcorners, img, diametre):
-	for (x,y) in corners:
-		cv.Circle(img, cv.Point(x,y), diametre, rouge, -1)
+	for (x,y) in dcorners:
+		cv.Circle(img, (x,y), diametre, rouge, -1)
 def affichage(src, deyes, deyes2, dnose, dmouth, a=0, b=0):
 	affichage_eyes(deyes, src, a,b)
 	affichage_eyes2(deyes2, src, a,b)
@@ -177,12 +179,16 @@ def best_mouth(mouth):
 				res = ((x,y,w,h),n)
 	return [res]
 
+def path_split(path):
+	i = path.split('/')
+	dossier = i[len(i)-2]+"/"
+	fichier = i[len(i)-1]
+	return (dossier, fichier)
+
 # Permet l'extraction des visages sur n'importe quelle photo et redimensionnent les visages trouves en NORM_W x NORM_H
 def normalisation(img) :
 
-	img2 = img.split('/')
-	dossier = img2[len(img2)-2]+"/"
-	fichier = img2[len(img2)-1]
+	(dossier, fichier) = path_split(img)
 
 	print ""
 	if(os.path.exists(norm_path+dossier+"small_0."+fichier)):
@@ -228,6 +234,8 @@ def normalisation(img) :
 # Traitement apres la normalisation (cad sur les images de visages en NORM_W x NORM_H)
 def after_norm(img, affichage, boolean_arff):
 
+	(dossier, fichier) = path_split(img)
+
 	#print norm_path+img
 	src = cv.LoadImage(norm_path+img)
 
@@ -247,22 +255,45 @@ def after_norm(img, affichage, boolean_arff):
 		affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth'])
 		# ----- Affichage de la bouche la plus basse (en general la bonne) ----- #
 		#affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth2'])
+		save(dnorm_path, img, src)
 	if boolean_arff:
 		fill_arff(d, img)	
 
-	#extracteur_de_sourires(img, tmp)
-	save(norm_path, img, src)
-
 def traitements(img):
 
-	#print norm_path+img
-	src = cv.LoadImage(norm_path+img)
-	temp = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_32F, 3)
-	temp2 = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_32F, 3)
+	(dossier, fichier) = path_split(img)
+	src = cv.LoadImageM(norm_path+img, 1)
+	dst = cv.CreateImage(cv.GetSize(src), cv.IPL_DEPTH_16S, 3)
 
-	corners = GoodFeaturesToTrack(src, temp, temp2, 10, 1.0, 5.0)
-	affichage_corners(corners, src, 2) 
-	save(traitement_path, img, src)
+	# --- Corners --- #
+	print "CORNERS"
+	#eig_image = cv.CreateMat(src.rows, src.cols, cv.CV_32FC1)
+	#temp_image = cv.CreateMat(src.rows, src.cols, cv.CV_32FC1)
+	#corners = cv.GoodFeaturesToTrack(src, eig_image, temp_image, 100, 0.04, 1.0, useHarris = True)
+	#affichage_corners(corners, src, 2) 
+	#save(traitement_path, img, src)
+	print "FIN CORNERS"
+
+	# --- Seuil --- #
+	print "SEUIL"
+	src = cv.LoadImageM(norm_path+img, cv.CV_LOAD_IMAGE_GRAYSCALE)
+	cv.AdaptiveThreshold(src,src,255, cv.CV_ADAPTIVE_THRESH_MEAN_C, cv.CV_THRESH_BINARY_INV, 7, 10)
+	#cv.Erode(src,src,None,1)
+	#cv.Dilate(src,src,None,2)
+	print src[56,56]
+	save(traitement_path, dossier+"seuil."+fichier, src)
+	print "FIN SEUIL"
+
+	print "LAPLACE"
+	#cv.Laplace(src, dst)
+	#save(traitement_path, dossier+"laplace."+fichier, dst)
+	print "FIN LAPLACE"
+
+	# --- Sobel --- #
+	print "SOBEL"
+	#cv.Sobel(src, dst, 1, 1)
+	#save(traitement_path, dossier+"sobel."+fichier, dst)
+	print "FIN SOBEL"
 
 
 # Renvoie l'emotion associee au nom de fichier : -
@@ -302,21 +333,19 @@ def fill_arff(d, file_name):
 	except: 
 		print "Nom de fichier non annote ou incorrect"
 
-def main(image = "../../images/", norm = "../../norm/", res = "../../result/", traitement="../../traitement"):
-	global traitement_path
-	global image_path
-	global norm_path
-	global result
-	traitement_path = traitement
-	image_path = image
-	norm_path = norm
-	result = res   
+def main():
 
-	liste = auto(image_path)
-	norm_loop(liste)
-	#liste_norm = auto(norm_path)
-	#traitement_loop(liste_norm)
+	#liste = auto(image_path)
+	liste_norm = auto(norm_path)
+
+	#--- Normalisation --- #
+	#norm_loop(liste)
+
+	# --- Detection --- #
 	#detect_loop(liste_norm, affichage=False, boolean_arff=True)
+
+	# --- Traitements --- #
+	traitement_loop(liste_norm)
 
 if __name__ == "__main__":
 	main()
