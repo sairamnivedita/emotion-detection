@@ -17,6 +17,7 @@ path = "../haarcascades/"
 image_path = "../../images/"
 norm_path = "../../norm/"
 result = "../../result/"
+traitement_path = "../../traitement/"
 
 # cascades recherchees :
 frontal_face = "haarcascade_frontalface_default.xml"
@@ -53,21 +54,27 @@ noir  = (0,0,0)
 blanc = (255,255,255)
 clair = (192,192,192)
 sombre = (64,64,64)
-		
+
 # Retourne la liste des fichiers dans le path entre en parametres
 def auto(path):
-	liste = commands.getoutput("ls "+path+" | grep .jpg")
-	liste = liste.split()
-	print liste
-	return liste
+	res = []
+	liste = commands.getoutput("ls -d "+path+"*/* | grep .jpg")
+	liste = liste.split('\n')
+	for line in liste:
+		line = line.split('/')
+		line = line[3]+"/"+line[4]
+		print line
+		res.append(line)
+	return res
 
 # Boucle d'appel pour le traitement des images :
 def norm_loop(liste):
 	print "NORMALISATION"
 	for image in liste:
-		print image
+		print "Normalisation de l'image "+str(image)+" en cours"
 		normalisation(image)
 	print "FIN NORMALISATION"
+
 # Affichage et arff sont des booleans pour savoir si on affiche et si l'on cree le fichier arff
 def detect_loop(liste, affichage, boolean_arff):
 	if boolean_arff:
@@ -77,6 +84,12 @@ def detect_loop(liste, affichage, boolean_arff):
 		after_norm(image, affichage, boolean_arff)
 	arf.no_more_data()
 	print "Ecriture et fermeture du fichier arff terminees"
+def traitement_loop(liste):
+	print "TRAITEMENT"
+	for image in liste:
+		print "Traitement de l'image "+str(image)+" en cours"
+		traitement(image)
+	print "FIN TRAITEMENT"
 
 # Detection des yeux, nez et bouche
 def detection_eye(img):
@@ -140,6 +153,9 @@ def affichage_nose(dnose, img, a=0, b=0):
 def affichage_mouth(dmouth, img, a=0, b=0):
 	for (x,y,w,h),n in dmouth: 
 		cv.Rectangle(img, (x+a,y+b), (x+w+a,y+h+b), jaune)
+def affichage_corners(dcorners, img, diametre):
+	for (x,y) in corners:
+		cv.Circle(img, cv.Point(x,y), diametre, rouge, -1)
 def affichage(src, deyes, deyes2, dnose, dmouth, a=0, b=0):
 	affichage_eyes(deyes, src, a,b)
 	affichage_eyes2(deyes2, src, a,b)
@@ -147,6 +163,8 @@ def affichage(src, deyes, deyes2, dnose, dmouth, a=0, b=0):
 	affichage_mouth(dmouth, src, a,b)
 
 def save(path, nom, img):
+	print "Sauvegarde de l'image:"
+	print path+nom
 	cv.SaveImage(path+nom, img)
 
 def best_mouth(mouth):
@@ -162,42 +180,50 @@ def best_mouth(mouth):
 # Permet l'extraction des visages sur n'importe quelle photo et redimensionnent les visages trouves en NORM_W x NORM_H
 def normalisation(img) :
 
-	print image_path+img
-	src = cv.LoadImage(image_path+img)
+	img2 = img.split('/')
+	dossier = img2[len(img2)-2]+"/"
+	fichier = img2[len(img2)-1]
 
-	# On fait une copie l'image pour le traitement (en gris)
-	gris = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_8U, 1)
-	normal = cv.CreateImage((NORM_W,NORM_H), cv.IPL_DEPTH_8U, 1)
-	cv.CvtColor(src, gris, cv.CV_BGR2GRAY)		
+	print ""
+	if(os.path.exists(norm_path+dossier+"small_0."+fichier)):
+		print "L'image "+str(img)+" est deja normalisee"
+	else:
+		print image_path+img
+		src = cv.LoadImage(image_path+img)
 
-	# On detecte les visages (objects) sur l'image copiee
-	faces = cv.HaarDetectObjects(gris, face_path, cv.CreateMemStorage())
-	
-	cp = 0
-	for (x,y,w,h),n in faces: 
-		tmp = cv.CreateImage( (w,h) , cv.IPL_DEPTH_8U, 1)
-		cv.GetRectSubPix(gris, tmp, (float(x + w/2), float(y + h/2)))
+		# On fait une copie l'image pour le traitement (en gris)
+		gris = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_8U, 1)
+		normal = cv.CreateImage((NORM_W,NORM_H), cv.IPL_DEPTH_8U, 1)
+		cv.CvtColor(src, gris, cv.CV_BGR2GRAY)		
 
-		cv.EqualizeHist(tmp, tmp)
-		cv.Resize(tmp, normal)
-		
-		#Detection oeil nez bouche sur l'image source:
-		d = detection(tmp)
-		d['mouth2'] = best_mouth(d['mouth'])
-		
-		if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ): 
-			
-			print "VISAGE dans la photo : "+ img
-			# ----- Affichage visage ----- #
-			affichage_visage((x,y,w,h), src)
-			# ----- Affichage de toute les bouches ----- #
-			#affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth'], x, y)
-			# ----- Affichage de la bouche la plus basse (en general la bonne) ----- #
-			#affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth2'], x, y)
+		# On detecte les visages (objects) sur l'image copiee
+		faces = cv.HaarDetectObjects(gris, face_path, cv.CreateMemStorage())
 
-			save(norm_path, "smallface_"+str(cp)+img, normal)
-			save(result, "face_"+img, src)
-			cp = cp +1
+		cp = 0
+		for (x,y,w,h),n in faces: 
+			tmp = cv.CreateImage( (w,h) , cv.IPL_DEPTH_8U, 1)
+			cv.GetRectSubPix(gris, tmp, (float(x + w/2), float(y + h/2)))
+
+			cv.EqualizeHist(tmp, tmp)
+			cv.Resize(tmp, normal)
+
+			#Detection oeil nez bouche sur l'image source:
+			d = detection(tmp)
+			d['mouth2'] = best_mouth(d['mouth'])
+
+			if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ): 
+
+				print "Visage detecte dans la photo : "+dossier+fichier
+				# ----- Affichage visage ----- #
+				affichage_visage((x,y,w,h), src)
+				# ----- Affichage de toute les bouches ----- #
+				#affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth'], x, y)
+				# ----- Affichage de la bouche la plus basse (en general la bonne) ----- #
+				#affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth2'], x, y)
+
+				save(norm_path, dossier+"small_"+str(cp)+"."+fichier, normal)
+				save(result, dossier+"face_"+fichier, src)
+				cp = cp +1
 
 # Traitement apres la normalisation (cad sur les images de visages en NORM_W x NORM_H)
 def after_norm(img, affichage, boolean_arff):
@@ -209,7 +235,7 @@ def after_norm(img, affichage, boolean_arff):
 	gris = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_8U, 1)
 	cv.CvtColor(src, gris, cv.CV_BGR2GRAY )		
 	cv.EqualizeHist(gris, gris)
-	
+
 	#Detection oeil nez bouche sur l'image source:
 	d = detection(gris)
 	d['mouth2'] = best_mouth(d['mouth'])
@@ -226,6 +252,18 @@ def after_norm(img, affichage, boolean_arff):
 
 	#extracteur_de_sourires(img, tmp)
 	save(norm_path, img, src)
+
+def traitements(img):
+
+	#print norm_path+img
+	src = cv.LoadImage(norm_path+img)
+	temp = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_32F, 3)
+	temp2 = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_32F, 3)
+
+	corners = GoodFeaturesToTrack(src, temp, temp2, 10, 1.0, 5.0)
+	affichage_corners(corners, src, 2) 
+	save(traitement_path, img, src)
+
 
 # Renvoie l'emotion associee au nom de fichier : -
 # AN -> anger
@@ -264,18 +302,21 @@ def fill_arff(d, file_name):
 	except: 
 		print "Nom de fichier non annote ou incorrect"
 
-def main(image = "../../images/", norm = "../../norm/", res = "../../result/"):
-    global image_path
-    global norm_path
-    global result
-    image_path = image
-    norm_path = norm
-    result = res   
+def main(image = "../../images/", norm = "../../norm/", res = "../../result/", traitement="../../traitement"):
+	global traitement_path
+	global image_path
+	global norm_path
+	global result
+	traitement_path = traitement
+	image_path = image
+	norm_path = norm
+	result = res   
 
-    liste = auto(image_path)
-    norm_loop(liste)
-    #liste_norm = auto(norm_path)
-    #detect_loop(liste_norm, False, True)
+	liste = auto(image_path)
+	norm_loop(liste)
+	#liste_norm = auto(norm_path)
+	#traitement_loop(liste_norm)
+	#detect_loop(liste_norm, affichage=False, boolean_arff=True)
 
 if __name__ == "__main__":
 	main()
