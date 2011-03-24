@@ -15,8 +15,10 @@ NORM_H = 128
 
 # chargement des paths
 path = "../haarcascades/"
-image_path = "../../images/"
-norm_path = "../../norm/"
+#image_path = "../../images/"
+image_path = "../../temp/"
+#norm_path = "../../norm/"
+norm_path = "../../tempnorm/"
 dnorm_path = "../../dnorm/"
 result = "../../result/"
 traitement_path = "../../traitement/"
@@ -40,7 +42,9 @@ s_1 = "smileD/smiled_02.xml"
 s_2 = "smileD/smiled_03.xml"
 s_3 = "smileD/smiled_04.xml"
 s_4 = "smileD/smiled_05.xml" 
-all_s_file = [ s_0, s_1, s_2, s_3, s_4 ]
+all_s_file = [s_0, s_1, s_2, s_3, s_4]
+smile_list = ["s_0", "s_1", "s_2", "s_3", "s_4"]
+attr_list = ["eyes", "eyes2", "mouth"]
 all_s = map( (lambda x : cv.Load(path+x)), all_s_file)
 
 # BLEU VERT ROUGE !
@@ -78,14 +82,14 @@ def norm_loop(liste):
 	print "FIN NORMALISATION"
 
 # Affichage et arff sont des booleans pour savoir si on affiche et si l'on cree le fichier arff
-def detect_loop(liste, affichage, boolean_arff):
+def detect_loop(liste_norm, liste_trait, boolean_arff=True, div=8):
 	if boolean_arff:
-		create_arff("premier_jet", "emotions")
-	for image in liste:
-		print image
-		after_norm(image, affichage, boolean_arff)
+		create_arff("premier_jet", "emotions", div)
+	for image_n, image_t in zip(liste_norm,liste_trait):
+		after_norm(image_n, image_t, boolean_arff,div)
 	arf.no_more_data()
 	print "Ecriture et fermeture du fichier arff terminees"
+
 def traitement_loop(liste):
 	print "TRAITEMENT"
 	for image in liste:
@@ -179,19 +183,11 @@ def best_mouth(mouth):
 				res = ((x,y,w,h),n)
 	return [res]
 
-def path_split(path):
-	i = path.split('/')
-	dossier = i[len(i)-2]+"/"
-	fichier = i[len(i)-1]
-	return (dossier, fichier)
-
 # Permet l'extraction des visages sur n'importe quelle photo et redimensionnent les visages trouves en NORM_W x NORM_H
 def normalisation(img) :
 
-	(dossier, fichier) = path_split(img)
-
 	print ""
-	if(os.path.exists(norm_path+dossier+"small_0."+fichier)):
+	if(os.path.exists(norm_path+dossier+"small_0."+img)):
 		print "L'image "+str(img)+" est deja normalisee"
 	else:
 		print image_path+img
@@ -219,7 +215,7 @@ def normalisation(img) :
 
 			if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ): 
 
-				print "Visage detecte dans la photo : "+dossier+fichier
+				print "Visage detecte dans la photo : "+img
 				# ----- Affichage visage ----- #
 				affichage_visage((x,y,w,h), src)
 				# ----- Affichage de toute les bouches ----- #
@@ -227,17 +223,14 @@ def normalisation(img) :
 				# ----- Affichage de la bouche la plus basse (en general la bonne) ----- #
 				#affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth2'], x, y)
 
-				save(norm_path, dossier+"small_"+str(cp)+"."+fichier, normal)
-				save(result, dossier+"face_"+fichier, src)
+				save(norm_path, dossier+"small_"+str(cp)+"."+img, normal)
+				save(result, dossier+"face_"+img, src)
 				cp = cp +1
 
 # Traitement apres la normalisation (cad sur les images de visages en NORM_W x NORM_H)
-def after_norm(img, affichage, boolean_arff):
+def after_norm(img_n,img_t, boolean_arff,div):
 
-	(dossier, fichier) = path_split(img)
-
-	#print norm_path+img
-	src = cv.LoadImage(norm_path+img)
+	src = cv.LoadImage(norm_path+img_n)
 
 	# On copie l'image pour le traitement (en gris)
 	gris = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_8U, 1)
@@ -246,22 +239,19 @@ def after_norm(img, affichage, boolean_arff):
 
 	#Detection oeil nez bouche sur l'image source:
 	d = detection(gris)
-	d['mouth2'] = best_mouth(d['mouth'])
 
-	# On detecte sans lunettes
-
-	if affichage:
+	if boolean_arff:
+		c = comptage_pixel(img_t,div)
+		fill_arff(d, img_n, c, div)	
+	else:	
+		# ----- Affichage de la bouche la plus basse (en general la bonne) ----- #
+		#d['mouth'] = best_mouth(d['mouth'])
 		# ----- Affichage de toute les bouches ----- #
 		affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth'])
-		# ----- Affichage de la bouche la plus basse (en general la bonne) ----- #
-		#affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth2'])
-		save(dnorm_path, img, src)
-	if boolean_arff:
-		fill_arff(d, img)	
+		save(dnorm_path, img_n, src)
 
 def traitements(img):
 
-	(dossier, fichier) = path_split(img)
 	src = cv.LoadImageM(norm_path+img, 1)
 	dst = cv.CreateImage(cv.GetSize(src), cv.IPL_DEPTH_16S, 3)
 
@@ -279,11 +269,12 @@ def traitements(img):
 	src = cv.LoadImageM(norm_path+img, cv.CV_LOAD_IMAGE_GRAYSCALE)
 	cv.AdaptiveThreshold(src,src,255, cv.CV_ADAPTIVE_THRESH_MEAN_C, cv.CV_THRESH_BINARY_INV, 7, 10)
 	#cv.Erode(src,src,None,1)
-	#cv.Dilate(src,src,None,2)
+	#cv.Dilate(src,src,None,1)
 	print src[56,56]
-	save(traitement_path, dossier+"seuil."+fichier, src)
+	save(traitement_path, dossier+"seuil."+img, src)
 	print "FIN SEUIL"
 
+	'''
 	print "LAPLACE"
 	#cv.Laplace(src, dst)
 	#save(traitement_path, dossier+"laplace."+fichier, dst)
@@ -294,7 +285,27 @@ def traitements(img):
 	#cv.Sobel(src, dst, 1, 1)
 	#save(traitement_path, dossier+"sobel."+fichier, dst)
 	print "FIN SOBEL"
+	'''
 
+def comptage_pixel(img,div):
+
+	res = []
+	src = cv.LoadImageM(traitement_path+img, 1)
+	largeur = NORM_W/div
+	hauteur = NORM_H/div
+
+	# div*div images de largeur NORM_W/div
+	for l in range(0, NORM_W, largeur):
+		for h in range(0, NORM_H, hauteur):
+			nb_pixel = 0
+			for l2 in range(largeur):
+				for h2 in range(hauteur):
+					# On prend le premier du pixel (niveau de gris => R=G=B
+					#print src[l+l2,h+h2]
+					if(src[l+l2,h+h2][0] > 128) : 
+						nb_pixel += 1
+			res.append(nb_pixel)
+	return res
 
 # Renvoie l'emotion associee au nom de fichier : -
 # AN -> anger
@@ -306,11 +317,11 @@ def traitements(img):
 # SU -> surprise
 def emotion(file_name):
 	try:
-		return file_name.split(".")[1][:2]
+		return file_name.split(".")[2][:2]
 	except:
 		return None
 
-def create_arff(file_name, arff_name):
+def create_arff(file_name, arff_name, div):
 	global arf
 	arf = write_arff.ArfFile(file_name, arff_name)
 	arf.add_attribute_numeric("eyes")
@@ -321,31 +332,45 @@ def create_arff(file_name, arff_name):
 	arf.add_attribute_numeric("s_2")
 	arf.add_attribute_numeric("s_3")
 	arf.add_attribute_numeric("s_4")
+	for i in range(div*div):
+		arf.add_attribute_numeric("cpt_"+str(i))
+	
 	arf.add_attribute_enum("emotion", ["AN", "DI", "FE", "HA", "NE", "SA", "SU"])
 	print "Ouverture du fichier "+file_name+" reussie"
 
-def fill_arff(d, file_name):
+def fill_arff(d, file_name, c_pixels, div):
+
+	dic = dict()
 	try:
-		dic = dict([("eyes", len(d['eyes'])),("eyes2", len(d['eyes2'])), ("mouth", len(d['mouth'])),
-			("s_0", d['s_0']), ("s_1", d['s_1']),("s_2", d['s_2']),("s_3", d['s_3']),("s_4", d['s_4']),
-			("emotion", emotion(file_name))])
-		arf.add_instance(dic)        
+		e = emotion(file_name)
+		dic["emotion"] = e
 	except: 
 		print "Nom de fichier non annote ou incorrect"
 
+	for a in attr_list:
+		dic[a] = len(d[a])
+	for s in smile_list:
+		dic[s] = d[s]
+	for i in range(div*div):
+		dic["cpt_"+str(i)] = c_pixels[i]
+	arf.add_instance(dic)        
+	print file_name+" : "+e
+
 def main():
 
-	#liste = auto(image_path)
+	liste = auto(image_path)
+	liste_trait = auto(traitement_path)
 	liste_norm = auto(norm_path)
 
 	#--- Normalisation --- #
 	#norm_loop(liste)
 
-	# --- Detection --- #
-	#detect_loop(liste_norm, affichage=False, boolean_arff=True)
-
 	# --- Traitements --- #
 	traitement_loop(liste_norm)
+
+	# --- Detection --- #
+	detect_loop(liste_norm, liste_trait, div=8)
+
 
 if __name__ == "__main__":
 	main()
