@@ -85,25 +85,25 @@ class ArfFile:
 
 
 # TEST :
-print " TEST STRING : "
-print string(None)
-print string(True)
-print string(False)
-print string(3.14)
-print string('blabla')
-print " FIN TEST STRING "
-
-
-arf = ArfFile("test_arf", "relation_test")
-arf.add_attribute_bool("le_bool")
-arf.add_attribute_numeric("le_nombre")
-arf.add_attribute_enum("quoi", ['truc', 'bidule', 'machin', 'chose' , 'meta'])
-
-dic = dict([('le_bool', True),('le_nombre', 3.0), ('quoi', 'bidule')])
-dic1 = dict([('le_bool', True),('le_nombre', 2.0), ('quoi', 'chose')])
-dic2 = dict([('le_bool', False),('le_nombre', 7.0), ('quoi', 'metabidule')])
-arf.add_instance(dic)        
-arf.add_instance(dic1)
-arf.add_instance(dic2)
-arf.no_more_data() # plus propre
-print "regarder dans test_arf"
+#print " TEST STRING : "
+#print string(None)
+#print string(True)
+#print string(False)
+#print string(3.14)
+#print string('blabla')
+#print " FIN TEST STRING "
+#
+#
+#arf = ArfFile("test_arf", "relation_test")
+#arf.add_attribute_bool("le_bool")
+#arf.add_attribute_numeric("le_nombre")
+#arf.add_attribute_enum("quoi", ['truc', 'bidule', 'machin', 'chose' , 'meta'])
+#
+#dic = dict([('le_bool', True),('le_nombre', 3.0), ('quoi', 'bidule')])
+#dic1 = dict([('le_bool', True),('le_nombre', 2.0), ('quoi', 'chose')])
+#dic2 = dict([('le_bool', False),('le_nombre', 7.0), ('quoi', 'metabidule')])
+#arf.add_instance(dic)        
+#arf.add_instance(dic1)
+#arf.add_instance(dic2)
+#arf.no_more_data() # plus propre
+#print "regarder dans test_arf"
