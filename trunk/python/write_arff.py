@@ -1,3 +1,4 @@
+
 def string(truc):
 	if truc == None: return "?"
 	if type(truc) == bool:
@@ -23,12 +24,13 @@ class ArfFile:
 	Cette classe est donc un automate a 2 etats: specification des attributs, PUIS
 	ecritures des instances. On ne peut pas revenir au premier etat a ce jour.
 	"""
+
 	def __init__(self, nom, relation):
 		self.filename = nom + '.arff'
 		self.attribut_list = []
 		self.relation = relation
 		self.no_more_attribute = False
-		self.FILE = None
+		self.file = None
 
 
 	def add_attribute_bool(self, nom):
@@ -58,11 +60,11 @@ class ArfFile:
 			for i in range(1,len(self.attribut_list)):
 				a = self.attribut_list[i]
 				stri = stri + ", " + string(dictionary[a[0]])
-			self.FILE.write(stri+"\n")
+			self.file.write(stri+"\n")
 
 		def write_structure ():
 			# On decrit la structure d'une instance dans le fichier
-			self.FILE.write("@RELATION\t'" + self.relation + "'\n\n")
+			self.file.write("@RELATION\t'" + self.relation + "'\n\n")
 			for a in self.attribut_list: # pour chaque attribut
 				if type(a[1]) == list: # si c'est une enumeration ...
 					typ = "{" + a[1][0]
@@ -71,17 +73,17 @@ class ArfFile:
 					typ = typ + "}"
 				else: # sinon c'est un NUMERIC
 					typ = a[1]
-				self.FILE.write("@ATTRIBUTE\t" + a[0] +"\t"+ str(typ) + "\n")
-			self.FILE.write("\n@DATA\n")
+				self.file.write("@ATTRIBUTE\t" + a[0] +"\t"+ str(typ) + "\n")
+			self.file.write("\n@DATA\n")
 			self.no_more_attribute = True
 
-		if self.FILE == None: self.FILE = open(self.filename,"w")
+		if self.file == None: self.file = open(self.filename,"w")
 		if (not self.no_more_attribute): write_structure ()
 		write_instance(dictionary)
 
 
 	def no_more_data(self):
-		self.FILE.close()
+		self.file.close()
 
 # TEST:
 #print " TEST STRING: "
