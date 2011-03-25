@@ -6,21 +6,6 @@ import commands
 import math
 import copy
 
-'''
-# BLEU VERT ROUGE !
-bleu  = (255,0,0)
-vert  = (0,255,0)
-jaune = (0,255,255)
-rose  = (255,186,185)
-rouge = (0,0,255)
-
-# NOIR ET BLANC
-gris  = (128,128,128)
-noir  = (0,0,0)
-blanc = (255,255,255)
-clair = (192,192,192)
-sombre = (64,64,64)
-'''
 
 # Notre .arff est une variable global
 arf = None
@@ -30,13 +15,10 @@ NORM_W = 128
 NORM_H = 128
 
 # chargement des paths
-path = "../haarcascades/"
-#image_path = "../../images/"
-image_path = "../../temp/"
-#norm_path = "../../norm/"
-norm_path = "../../tempnorm/"
-dnorm_path = "../../dnorm/"
-result = "../../result/"
+h_path = "../haarcascades/"
+result_path = "../../result/"
+images_path = "../../images/"
+norm_path = "../../norm/"
 traitement_path = "../../traitement/"
 
 # cascades recherchees :
@@ -87,9 +69,9 @@ def detection(img):
 		res[s] = liste_s[s]
 	return res
 
-def sourires(src):
+def sourires(img):
 	res = dict()
-	img = cv.GetSubRect(src, (src.width*1/7, src.height*2/3, src.width*5/7, src.height/3)) 
+	img = cv.GetSubRect(img, (img.width*1/7, img.height*2/3, img.width*5/7, img.height/3)) 
 	cpt = 0
 	for s,smiles in zip(all_s, smile_list) :
 		res[smiles] = len(cv.HaarDetectObjects(img, s, cv.CreateMemStorage()))
@@ -115,12 +97,15 @@ def norm_loop(in_path, out_path="", save=False):
 	print "NORMALISATION"
 	cp = 0
 	for image in jpegs:
-		print "Normalisation de l'image "+str(image)+" en cours"
-		normal = normalisation(image)
-		if save:
-			save(out_path, "small_."+img, normal)
-			cp += 1
-		res.append(temp)
+		if(os.path.exists(norm_path+dossier+"small_0."+img)):
+			print "L'image "+str(img)+" est deja normalisee"
+		else:
+			print "Normalisation de l'image "+str(image)+" en cours"
+			normal = normalisation(image)
+			if save:
+				save(out_path, "small_."+str(cp)+img, normal)
+				cp += 1
+			res.append(temp)
 	return res
 	print "FIN NORMALISATION"
 
@@ -130,24 +115,24 @@ def treatment_loop(in_path, out_path="", save=False):
 	print "TRAITEMENT"
 	cp = 0
 	for image in jpegs:
-		print "Traitement de l'image "+str(image)+" en cours"
-		modif = treatments(image)
-		if save:
-			save(out_path, "modif."+img, modif)
-			cp += 1
-		res.append(temp)
+		if(os.path.exists(norm_path+dossier+"small_0."+img)):
+			print "L'image "+str(img)+" est deja modifiee"
+		else:
+			print "Traitement de l'image "+str(image)+" en cours"
+			modif = treatments(image)
+			if save:
+				save(out_path, "modif_"+str(cp)+img, modif)
+				cp += 1
+			res.append(temp)
 	return res
 	print "FIN TRAITEMENT"
-
-def traitement_loop(liste):
-	for image in liste:
 
 # Affichage et arff sont des booleans pour savoir si on affiche et si l'on cree le fichier arff
 def arff_loop(in_path, file_name="fichier_arff", div=8):
 	create_arff(file_name, "emotions", div)
 	jpegs = jpg_list(in_path)
 	for image in jpegs:
-		after_norm(image_n, image_t, boolean_arff,div)
+		#ARFF
 	arf.no_more_data()
 	print "Ecriture et fermeture du fichier arff terminees"
 
@@ -161,30 +146,6 @@ def extracteur_de_sourires(nom, src):
 		if cpt == len(all_s) :
 			print "\tsourire vu dans "+nom
 			cv.SaveImage(result+str(cpt)+"s_"+nom, img)
-
-# Affichage des yeux, nez et bouche + correction 
-def affichage_visage((x,y,w,h), img, a=0, b=0):
-	cv.Rectangle(img, (x+a,y+b), (x+w+a,y+h+b), bleu)
-def affichage_eyes(deyes, img, a=0, b=0):
-	for (x,y,w,h),n in deyes:
-		cv.Rectangle(img, (x+a,y+b), (x+w+a,y+h+b), vert)
-def affichage_eyes2(deyes2, img, a=0, b=0):
-	for (x,y,w,h),n in deyes2:
-		cv.Rectangle(img, (x+a,y+b), (x+w+a,y+h+b), rouge)
-def affichage_nose(dnose, img, a=0, b=0):
-	for (x,y,w,h),n in dnose: 
-		cv.Rectangle(img, (x+a,y+b), (x+w+a,y+h+b), rose)
-def affichage_mouth(dmouth, img, a=0, b=0):
-	for (x,y,w,h),n in dmouth: 
-		cv.Rectangle(img, (x+a,y+b), (x+w+a,y+h+b), jaune)
-def affichage_corners(dcorners, img, diametre):
-	for (x,y) in dcorners:
-		cv.Circle(img, (x,y), diametre, rouge, -1)
-def affichage(src, deyes, deyes2, dnose, dmouth, a=0, b=0):
-	affichage_eyes(deyes, src, a,b)
-	affichage_eyes2(deyes2, src, a,b)
-	affichage_nose(dnose, src, a,b)
-	affichage_mouth(dmouth, src, a,b)
 
 def save(path, nom, img):
 	print "Sauvegarde de l'image:"
@@ -202,51 +163,43 @@ def best_mouth(mouth):
 	return [res]
 
 # Permet l'extraction des visages sur n'importe quelle photo et redimensionnent les visages trouves en NORM_W x NORM_H
-def normalisation(img, ) :
+def normalisation(img) :
 
-	print ""
-	if(os.path.exists(norm_path+dossier+"small_0."+img)):
-		print "L'image "+str(img)+" est deja normalisee"
-	else:
-		print image_path+img
-		src = cv.LoadImage(image_path+img)
+	print image_path+img
+	src = cv.LoadImage(image_path+img)
 
-		# On fait une copie l'image pour le traitement (en gris)
-		gris = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_8U, 1)
-		normal = cv.CreateImage((NORM_W,NORM_H), cv.IPL_DEPTH_8U, 1)
-		cv.CvtColor(src, gris, cv.CV_BGR2GRAY)		
+	# On fait une copie l'image pour le traitement (en gris)
+	gris = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_8U, 1)
+	normal = cv.CreateImage((NORM_W,NORM_H), cv.IPL_DEPTH_8U, 1)
+	cv.CvtColor(src, gris, cv.CV_BGR2GRAY)		
 
-		# On detecte les visages (objects) sur l'image copiee
-		faces = cv.HaarDetectObjects(gris, face_path, cv.CreateMemStorage())
+	# On detecte les visages (objects) sur l'image copiee
+	faces = cv.HaarDetectObjects(gris, face_path, cv.CreateMemStorage())
 
-		cp = 0
-		for (x,y,w,h),n in faces: 
-			tmp = cv.CreateImage( (w,h) , cv.IPL_DEPTH_8U, 1)
-			cv.GetRectSubPix(gris, tmp, (float(x + w/2), float(y + h/2)))
+	for (x,y,w,h),n in faces: 
+		tmp = cv.CreateImage( (w,h) , cv.IPL_DEPTH_8U, 1)
+		cv.GetRectSubPix(gris, tmp, (float(x + w/2), float(y + h/2)))
 
-			cv.EqualizeHist(tmp, tmp)
-			cv.Resize(tmp, normal)
+		cv.EqualizeHist(tmp, tmp)
+		cv.Resize(tmp, normal)
 
-			#Detection oeil nez bouche sur l'image source:
-			d = detection(tmp)
-			d['mouth2'] = best_mouth(d['mouth'])
+		#Detection oeil nez bouche sur l'image source:
+		d = detection(tmp)
+		d['mouth2'] = best_mouth(d['mouth'])
 
-			if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ): 
+		if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ): 
 
-				print "Visage detecte dans la photo : "+img
-				# ----- Affichage visage ----- #
-				affichage_visage((x,y,w,h), src)
-				# ----- Affichage de toute les bouches ----- #
-				#affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth'], x, y)
-				# ----- Affichage de la bouche la plus basse (en general la bonne) ----- #
-				#affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth2'], x, y)
+			print "Visage detecte dans la photo : "+img
+			# ----- Affichage visage ----- #
+			#affichage_visage((x,y,w,h), src)
+			#save(result, out_path+img, src)
 
-				save(norm_path, dossier+"small_"+str(cp)+"."+img, normal)
-				save(result, dossier+"face_"+img, src)
-				cp = cp +1
+			# ----- Affichage ----- #
+			#affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth2'], x, y)
+			#affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth'], x, y)
 
 # Traitement apres la normalisation (cad sur les images de visages en NORM_W x NORM_H)
-def after_norm(img_n,img_t, boolean_arff,div):
+def arff(liste_img, div):
 
 	src = cv.LoadImage(norm_path+img_n)
 
