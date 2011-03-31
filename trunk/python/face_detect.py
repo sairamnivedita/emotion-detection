@@ -123,6 +123,20 @@ def detection(img):
 	res['s_3'] = liste_s[3]
 	res['s_4'] = liste_s[4]
 	return res
+	
+def detection_pour_classification(img):
+	res = []
+	res.append(len(detection_eye(img)))
+	res.append(len(detection_eye2(img)))
+	res.append(len(detection_nose(img)))
+	res.append(len(detection_mouth(img)))
+	liste_s = sourires(img)
+	res.append(liste_s[0])
+	res.append(liste_s[1])
+	res.append(liste_s[2])
+	res.append(liste_s[3])
+	res.append(liste_s[4])
+	return res
 
 def sourires(src):
 	res = []
@@ -213,7 +227,7 @@ def normalisation(img) :
 			d = detection(tmp)
 			d['mouth2'] = best_mouth(d['mouth'])
 
-			if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ): 
+			if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ) : 
 
 				print "Visage detecte dans la photo : "+img
 				# ----- Affichage visage ----- #
@@ -288,7 +302,6 @@ def traitements(img):
 	'''
 
 def comptage_pixel(img,div):
-
 	res = []
 	src = cv.LoadImageM(traitement_path+img, 1)
 	largeur = NORM_W/div
@@ -303,6 +316,24 @@ def comptage_pixel(img,div):
 					# On prend le premier du pixel (niveau de gris => R=G=B
 					#print src[l+l2,h+h2]
 					if(src[l+l2,h+h2][0] > 128) : 
+						nb_pixel += 1
+			res.append(nb_pixel)
+	return res
+
+def comptage_pixel_sur_image(src, div = 8):
+	res = []
+	largeur = NORM_W/div
+	hauteur = NORM_H/div
+	cv.AdaptiveThreshold(src,src,255, cv.CV_ADAPTIVE_THRESH_MEAN_C, cv.CV_THRESH_BINARY_INV, 7, 10)
+	# div*div images de largeur NORM_W/div
+	for l in range(0, NORM_W, largeur):
+		for h in range(0, NORM_H, hauteur):
+			nb_pixel = 0
+			for l2 in range(largeur):
+				for h2 in range(hauteur):
+					# On prend le premier du pixel (niveau de gris => R=G=B
+					#print src[l+l2,h+h2]
+					if(src[l+l2,h+h2] > 128) : 
 						nb_pixel += 1
 			res.append(nb_pixel)
 	return res
@@ -353,8 +384,32 @@ def fill_arff(d, file_name, c_pixels, div):
 		dic[s] = d[s]
 	for i in range(div*div):
 		dic["cpt_"+str(i)] = c_pixels[i]
-	arf.add_instance(dic)        
+	arf.add_instance(dic)
 	print file_name+" : "+e
+
+def find_faces_and_normalize(src) :
+	# On fait une copie l'image pour le traitement (en gris)
+	gris = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_8U, 1)
+	normal = cv.CreateImage((NORM_W,NORM_H), cv.IPL_DEPTH_8U, 1)
+	cv.CvtColor(src, gris, cv.CV_BGR2GRAY)		
+
+	# On detecte les visages (objects) sur l'image copiee
+	faces = cv.HaarDetectObjects(gris, face_path, cv.CreateMemStorage())
+	res = []
+	for (x,y,w,h),n in faces: 
+		tmp = cv.CreateImage( (w,h) , cv.IPL_DEPTH_8U, 1)
+		cv.GetRectSubPix(gris, tmp, (float(x + w/2), float(y + h/2)))
+
+		cv.EqualizeHist(tmp, tmp)
+		cv.Resize(tmp, normal)
+
+		#Detection oeil nez bouche sur l'image source:
+		d = detection(tmp)
+		d['mouth2'] = best_mouth(d['mouth'])
+
+		if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ): 
+			res.append((normal,(x,y,w,h)))
+	return res
 
 def main():
 
