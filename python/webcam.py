@@ -1,5 +1,7 @@
+
 import sys
 import cv
+#import /usr/lib/pymodules/python2.6/cv.so
  
 # le main_loop cree une fenetre et y affiche l'image de la webcam, apres traitement (fonction passe en parametre)
 def main_loop(process = None):
@@ -42,5 +44,5 @@ def main_loop(process = None):
             cv.DestroyAllWindows()
             break  
 
-if __name__ == "__main__": 
-   main_loop()
+if __name__ == "__main__":
+    main_loop()
