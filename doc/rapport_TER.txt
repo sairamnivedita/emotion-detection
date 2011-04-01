@@ -1,0 +1,30 @@
+Arbre de décision J48
+
+Il représente les étapes prises pour décider d'une classification. L'arbre commence par un noeud racine, chaque noeud évalue un critère, et détermine le noeud suivant à évaluer. La classification est effectuée une fois une feuille atteinte.
+
+Les arbres de décision peuvent représenter divers types de donnée. Le plus simple étant des nombres, mais une énumération quelconque n'est pas contre indiqué.
+
+La construction s'effectue de manière récursive. D'abord, un attribut est sélectionné comme racine. Pour construire un abre éfficace, il est necessaire que l'attribut choisi partitionne les instances du problème de décision le plus équitablement possible. La meilleure partition est celle qui assure le meilleur gain d'information. Ensuite, un sous arbre est construit pour chaque sous partie. L'information, dans ce contexte provient de la théorie de l'information développé par Claude Shannon, le gain d'information est calculé à l'aide d'une formule apropriée, qui ne sera pas détaillée ici.
+
+
+L'algorithme utilisé par Weka est J48. C'est une variation du C4.5 de J. Ross Quinlan. Il semble important de comprendre la variété d'options d'élagage applicable à cet algorithme, car elles peuvent avoir un impact important sur la qualité des résultats.
+
+L'élagage d'arbre produit des résultats plus faciles à interpréter et peut éviter un surraprentissage, c'est à dire que la décision serait bonne sur l'ensemble d'apprentissage, et mauvaise en généralisation. Celui ci consiste en une substitution de sous-arbres, on peut remplacer un noeud par une feuille ce qui réduit le nombre de tests dans cette branche de l'arbre.
+
+Les taux d'erreur sont utilisés pour décider de l'élagage optimal. Il y a plusieurs méthodes pour celà, la plus simple étant de réserver une parti du corpus pour tester l'arbre de décision que l'on a entrainé. Bien que cette méthode soit simple, elle présente l'inconvénient de diminuer la taille du corpus d'apprentissage. Elle est déconseillé pour de petits corpus.
+
+
+D'autres méthodes fondées sur le calcul de taux d'erreurs consistent à estimer l'erreur inhérente au corpus d'apprentissage. Cela permet de décider du degrés de généralité ou de spécificité du modèle. Si les données sont très fidèles au modèle, il n'est pas nécessaire d'élaguer pour éviter une erreur en généralisation. 
+
+Certaines options déterminent la spécificité du modèle, comme le nombre minimum d'instances par feuilles. Plus ce nombre est élevé, plus l'arbre est général. L'option "binary split" est appliquée aux données numériques : elle limite le nombre de point de décision en n'autorisant qu'un partitionnement binaire d'une grandeur.
+
+
+Perceptron Multicouche
+
+Le perceptron est un modèle mathématique inspiré des neurones inventé en 1957 par Frank Rosenblatt. Il s'agit du plus simple des réseaux de neurones artificielles : c'est un classificateur linéaire. Son principe de fonctionnement est simple : si le produit scalaire d'un vecteur d'entrée et d'un vecteur propre au "neurone" est superieur à 0, la sortie du perceptron vaudra 1, et 0 sinon. Graphiquement, cela équivaut à classer un point au dessus ou au dessous d'un hyperplan, d'où le terme de classificateur linéaire.
+
+L'apprentissage est supervisé, et utilise un algorithme de propagation. L'erreur calculée sur la sortie est répercutée sur les poids du vecteur interne au "neurone". Dans le cas où les données d'apprentissage sont linéairement séparables, l'algorithme converge. Dans le cas contraire, il oscille.
+
+Afin de dépasser ces limitations inhérentes, on assemble plusieurs neurones afin de constituer un réseau, le perceptron multicouche. Il s'agit d'un graphe orienté de neurones, réparti en plusieurs couches dont les entrée sont connectés aux sorties de la précédente.
+Un MLP de 2 couches permet d'approcher n'importe quelle fonction continue. Une troisième couche permet d'approximer une fonction arbitraire.
+
