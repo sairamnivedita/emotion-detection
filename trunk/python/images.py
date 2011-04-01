@@ -16,10 +16,6 @@ NORM_H = 128
 
 # chargement des paths
 h_path = "../haarcascades/"
-result_path = "../../result/"
-images_path = "../../images/"
-norm_path = "../../norm/"
-traitement_path = "../../traitement/"
 
 # cascades recherchees :
 frontal_face = "haarcascade_frontalface_default.xml"
@@ -28,11 +24,11 @@ eyes2 = "haarcascade_eye_tree_eyeglasses.xml";
 mouth = "haarcascade_mcs_mouth.xml";
 nose = "haarcascade_mcs_nose.xml";
 
-face_path = cv.Load(path+frontal_face)
-eye_path = cv.Load(path+eyes)
-eye2_path = cv.Load(path+eyes2)
-mouth_path = cv.Load(path+mouth)
-nose_path = cv.Load(path+nose)
+face_path = cv.Load(h_path+frontal_face)
+eye_path = cv.Load(h_path+eyes)
+eye2_path = cv.Load(h_path+eyes2)
+mouth_path = cv.Load(h_path+mouth)
+nose_path = cv.Load(h_path+nose)
 
 # cascade sourire
 s_0 = "smileD/smiled_01.xml"
@@ -43,7 +39,7 @@ s_4 = "smileD/smiled_05.xml"
 all_s_file = [s_0, s_1, s_2, s_3, s_4]
 smile_list = ["s_0", "s_1", "s_2", "s_3", "s_4"]
 attr_list = ["eyes", "eyes2", "mouth"]
-all_s = map( (lambda x : cv.Load(path+x)), all_s_file)
+all_s = map( (lambda x : cv.Load(h_path+x)), all_s_file)
 
 # Detection des yeux, nez et bouche
 def detection_eye(img):
@@ -81,60 +77,55 @@ def sourires(img):
 # Retourne la liste des fichiers dans le path entre en parametres
 def jpg_list(path):
 	res = []
-	liste = commands.getoutput("ls -d "+path+"* | grep .jpg")
+	print "le path est"+path
+	liste = commands.getoutput("ls "+path+" | grep .jpg")
 	liste = liste.split('\n')
+	print liste
 	for line in liste:
-		line = line.split('/')
-		path = line[len(line)-2]+"/"+line[len(line)-1]
-		#print path
-		res.append(path)
+		print line
+		res.append(line)
 	return res
 
 # Boucle d'appel pour le traitement des images :
-def norm_loop(in_path, out_path="", save=False):
+def norm_loop(in_path, out_path):
 	res = []
 	jpegs = jpg_list(in_path)
 	print "NORMALISATION"
-	cp = 0
-	for image in jpegs:
-		if(os.path.exists(norm_path+dossier+"small_0."+img)):
-			print "L'image "+str(img)+" est deja normalisee"
+	for img in jpegs:
+		if(os.path.exists(out_path+"small_"+img)):
+			print "L'image "+img+" est deja normalisee"
 		else:
-			print "Normalisation de l'image "+str(image)+" en cours"
-			normal = normalisation(image)
-			if save:
-				save(out_path, "small_."+str(cp)+img, normal)
-				cp += 1
-			res.append(temp)
-	return res
+			src = cv.LoadImage(in_path+img)
+			print "Normalisation de l'image "+img+" en cours"
+			normal = normalisation(src)
+			if not normal == None:
+				save(out_path, "small_"+img, normal)
 	print "FIN NORMALISATION"
 
-def treatment_loop(in_path, out_path="", save=False):
+# Boucle de traitements
+def treatment_loop(in_path, out_path):
 	res = []
 	jpegs = jpg_list(in_path)
 	print "TRAITEMENT"
-	cp = 0
-	for image in jpegs:
-		if(os.path.exists(norm_path+dossier+"small_0."+img)):
-			print "L'image "+str(img)+" est deja modifiee"
-		else:
-			print "Traitement de l'image "+str(image)+" en cours"
-			modif = treatments(image)
-			if save:
-				save(out_path, "modif_"+str(cp)+img, modif)
-				cp += 1
-			res.append(temp)
-	return res
+	for img in jpegs:
+		if(os.path.exists(out_path+"modif_"+img)):
+			print "L'image "+img+" a deja ete traite"
+		else:  
+			src = cv.LoadImageM(in_path+img, cv.CV_LOAD_IMAGE_GRAYSCALE)
+			print "Traitement de l'image "+img+" en cours"
+			modif = treatments(src)
+			save(out_path, "modif_"+img, modif)
 	print "FIN TRAITEMENT"
 
-# Affichage et arff sont des booleans pour savoir si on affiche et si l'on cree le fichier arff
+# Boucle de creation du arff
 def arff_loop(in_path, file_name="fichier_arff", div=8):
 	create_arff(file_name, "emotions", div)
 	jpegs = jpg_list(in_path)
-	for image in jpegs:
-		#ARFF
+	for img in jpegs:
+		fill_arff(img)	
 	arf.no_more_data()
 	print "Ecriture et fermeture du fichier arff terminees"
+
 
 def extracteur_de_sourires(nom, src):
 	img = cv.GetSubRect(src, (src.width*1/7, src.height*2/3, src.width*5/7, src.height/3)) 
@@ -163,10 +154,7 @@ def best_mouth(mouth):
 	return [res]
 
 # Permet l'extraction des visages sur n'importe quelle photo et redimensionnent les visages trouves en NORM_W x NORM_H
-def normalisation(img) :
-
-	print image_path+img
-	src = cv.LoadImage(image_path+img)
+def normalisation(src):
 
 	# On fait une copie l'image pour le traitement (en gris)
 	gris = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_8U, 1)
@@ -185,18 +173,11 @@ def normalisation(img) :
 
 		#Detection oeil nez bouche sur l'image source:
 		d = detection(tmp)
-		d['mouth2'] = best_mouth(d['mouth'])
 
 		if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ): 
 
-			print "Visage detecte dans la photo : "+img
-			# ----- Affichage visage ----- #
-			#affichage_visage((x,y,w,h), src)
-			#save(result, out_path+img, src)
-
-			# ----- Affichage ----- #
-			#affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth2'], x, y)
-			#affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth'], x, y)
+			print "Visage detecte dans la photo"
+			return normal
 
 # Traitement apres la normalisation (cad sur les images de visages en NORM_W x NORM_H)
 def arff(liste_img, div):
@@ -221,42 +202,13 @@ def arff(liste_img, div):
 		affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth'])
 		save(dnorm_path, img_n, src)
 
-def traitements(img):
-
-	src = cv.LoadImageM(norm_path+img, 1)
-	dst = cv.CreateImage(cv.GetSize(src), cv.IPL_DEPTH_16S, 3)
-
-	# --- Corners --- #
-	print "CORNERS"
-	#eig_image = cv.CreateMat(src.rows, src.cols, cv.CV_32FC1)
-	#temp_image = cv.CreateMat(src.rows, src.cols, cv.CV_32FC1)
-	#corners = cv.GoodFeaturesToTrack(src, eig_image, temp_image, 100, 0.04, 1.0, useHarris = True)
-	#affichage_corners(corners, src, 2) 
-	#save(traitement_path, img, src)
-	print "FIN CORNERS"
+def treatments(img):
 
 	# --- Seuil --- #
-	print "SEUIL"
-	src = cv.LoadImageM(norm_path+img, cv.CV_LOAD_IMAGE_GRAYSCALE)
-	cv.AdaptiveThreshold(src,src,255, cv.CV_ADAPTIVE_THRESH_MEAN_C, cv.CV_THRESH_BINARY_INV, 7, 10)
+	cv.AdaptiveThreshold(img,img,255, cv.CV_ADAPTIVE_THRESH_MEAN_C, cv.CV_THRESH_BINARY_INV, 7, 10)
 	#cv.Erode(src,src,None,1)
 	#cv.Dilate(src,src,None,1)
-	print src[56,56]
-	save(traitement_path, dossier+"seuil."+img, src)
-	print "FIN SEUIL"
-
-	'''
-	print "LAPLACE"
-	#cv.Laplace(src, dst)
-	#save(traitement_path, dossier+"laplace."+fichier, dst)
-	print "FIN LAPLACE"
-
-	# --- Sobel --- #
-	print "SOBEL"
-	#cv.Sobel(src, dst, 1, 1)
-	#save(traitement_path, dossier+"sobel."+fichier, dst)
-	print "FIN SOBEL"
-	'''
+	return img
 
 def comptage_pixel(img,div):
 
@@ -305,7 +257,6 @@ def create_arff(file_name, arff_name, div):
 	arf.add_attribute_numeric("s_4")
 	for i in range(div*div):
 		arf.add_attribute_numeric("cpt_"+str(i))
-	
 	arf.add_attribute_enum("emotion", ["AN", "DI", "FE", "HA", "NE", "SA", "SU"])
 	print "Ouverture du fichier "+file_name+" reussie"
 
