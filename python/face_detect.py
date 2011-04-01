@@ -405,7 +405,6 @@ def find_faces_and_normalize(src) :
 
 		#Detection oeil nez bouche sur l'image source:
 		d = detection(tmp)
-		d['mouth2'] = best_mouth(d['mouth'])
 
 		if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ): 
 			res.append((normal,(x,y,w,h)))
