@@ -92,14 +92,14 @@ def norm_loop(in_path, out_path):
 	jpegs = jpg_list(in_path)
 	print "NORMALISATION"
 	for img in jpegs:
-		if(os.path.exists(out_path+"small_"+img)):
+		if(os.path.exists(out_path+"small."+img)):
 			print "L'image "+img+" est deja normalisee"
 		else:
 			src = cv.LoadImage(in_path+img)
 			print "Normalisation de l'image "+img+" en cours"
 			normal = normalisation(src)
 			if not normal == None:
-				save(out_path, "small_"+img, normal)
+				save(out_path, "small."+img, normal)
 	print "FIN NORMALISATION"
 
 # Boucle de traitements
@@ -122,7 +122,7 @@ def arff_loop(in_path, file_name="fichier_arff", div=8):
 	create_arff(file_name, "emotions", div)
 	jpegs = jpg_list(in_path)
 	for img in jpegs:
-		fill_arff(img)	
+		arff(in_path, img)	
 	arf.no_more_data()
 	print "Ecriture et fermeture du fichier arff terminees"
 
@@ -180,10 +180,9 @@ def normalisation(src):
 			return normal
 
 # Traitement apres la normalisation (cad sur les images de visages en NORM_W x NORM_H)
-def arff(liste_img, div):
+def arff(in_path, img, div=8):
 
-	src = cv.LoadImage(norm_path+img_n)
-
+	src = cv.LoadImage(in_path+img)
 	# On copie l'image pour le traitement (en gris)
 	gris = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_8U, 1)
 	cv.CvtColor(src, gris, cv.CV_BGR2GRAY )		
@@ -192,15 +191,8 @@ def arff(liste_img, div):
 	#Detection oeil nez bouche sur l'image source:
 	d = detection(gris)
 
-	if boolean_arff:
-		c = comptage_pixel(img_t,div)
-		fill_arff(d, img_n, c, div)	
-	else:	
-		# ----- Affichage de la bouche la plus basse (en general la bonne) ----- #
-		#d['mouth'] = best_mouth(d['mouth'])
-		# ----- Affichage de toute les bouches ----- #
-		affichage(src, d['eyes'], d['eyes2'], d['nose'], d['mouth'])
-		save(dnorm_path, img_n, src)
+	c = comptage_pixel(in_path, img)
+	fill_arff(d, img, c)	
 
 def treatments(img):
 
@@ -210,10 +202,10 @@ def treatments(img):
 	#cv.Dilate(src,src,None,1)
 	return img
 
-def comptage_pixel(img,div):
+def comptage_pixel(in_path, img,div=8):
 
 	res = []
-	src = cv.LoadImageM(traitement_path+img, 1)
+	src = cv.LoadImageM(in_path+img, 1)
 	largeur = NORM_W/div
 	hauteur = NORM_H/div
 
@@ -244,7 +236,7 @@ def emotion(file_name):
 	except:
 		return None
 
-def create_arff(file_name, arff_name, div):
+def create_arff(file_name, arff_name, div=8):
 	global arf
 	arf = write_arff.ArfFile(file_name, arff_name)
 	arf.add_attribute_numeric("eyes")
@@ -260,11 +252,11 @@ def create_arff(file_name, arff_name, div):
 	arf.add_attribute_enum("emotion", ["AN", "DI", "FE", "HA", "NE", "SA", "SU"])
 	print "Ouverture du fichier "+file_name+" reussie"
 
-def fill_arff(d, file_name, c_pixels, div):
+def fill_arff(d, img_name, c_pixels, div=8):
 
 	dic = dict()
 	try:
-		e = emotion(file_name)
+		e = emotion(img_name)
 		dic["emotion"] = e
 	except: 
 		print "Nom de fichier non annote ou incorrect"
@@ -275,8 +267,9 @@ def fill_arff(d, file_name, c_pixels, div):
 		dic[s] = d[s]
 	for i in range(div*div):
 		dic["cpt_"+str(i)] = c_pixels[i]
+	print dic
 	arf.add_instance(dic)        
-	print file_name+" : "+e
+	print img_name+" : "+e
 
 
 # Renvoie l'emotion associee au nom de fichier : -
