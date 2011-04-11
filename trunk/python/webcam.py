@@ -6,7 +6,7 @@ import cv
 # le main_loop cree une fenetre et y affiche l'image de la webcam, apres traitement (fonction passe en parametre)
 def main_loop(process = None, key_pressed = None):
     
-	print "Press ESC to exit ..."
+    print "Press ESC to exit ..."
     # creation de la fenetre, redimensionnement automatique
     cv.NamedWindow('Camera')
  
