@@ -4,7 +4,7 @@ import cv
 #import /usr/lib/pymodules/python2.6/cv.so
  
 # le main_loop cree une fenetre et y affiche l'image de la webcam, apres traitement (fonction passe en parametre)
-def main_loop(process = None):
+def main_loop(process = None, key_pressed = None):
     
 	print "Press ESC to exit ..."
     # creation de la fenetre, redimensionnement automatique
@@ -42,6 +42,10 @@ def main_loop(process = None):
         if k == 0x1b: # ESC
             print 'ESC pressed. Exiting ...'
             cv.DestroyAllWindows()
+            break  
+        if k == 0x20: # ESPACE
+            print 'ESPACE pressed. Computing.'
+            key_pressed(frame)
             break  
 
 if __name__ == "__main__":
