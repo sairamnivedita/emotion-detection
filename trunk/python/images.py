@@ -126,6 +126,42 @@ def arff_loop(in_path, file_name="fichier_arff", div=8):
 	arf.no_more_data()
 	print "Ecriture et fermeture du fichier arff terminees"
 
+def webcam_comptage_pixel(img,div=8):
+
+	src = treatments(img)
+	largeur = NORM_W/div
+	hauteur = NORM_H/div
+
+	# div*div images de largeur NORM_W/div
+	for l in range(0, NORM_W, largeur):
+		for h in range(0, NORM_H, hauteur):
+			nb_pixel = 0
+			for l2 in range(largeur):
+				for h2 in range(hauteur):
+					# On prend le premier du pixel (niveau de gris => R=G=B
+					#print src[l+l2,h+h2]
+					if(src[l+l2,h+h2][0] > 128) : 
+						nb_pixel += 1
+			res.append(nb_pixel)
+	return res
+
+def webcam_arff(file_name="cam.arff", src, div=8):
+
+	if not(os.path.exists(file_name)):
+		create_arff(file_name, "verdict", div)
+	else:
+		arf = open(file_name, "w")
+	# On copie l'image pour le traitement (en gris)
+	gris = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_8U, 1)
+	cv.CvtColor(src, gris, cv.CV_BGR2GRAY )		
+	cv.EqualizeHist(gris, gris)
+
+	#Detection oeil nez bouche sur l'image source:
+	d = detection(gris)
+
+	c = webcam_comptage_pixel(img)
+	fill_arff(d, img, c)	
+	arf.no_more_data()
 
 def extracteur_de_sourires(nom, src):
 	img = cv.GetSubRect(src, (src.width*1/7, src.height*2/3, src.width*5/7, src.height/3)) 
@@ -154,7 +190,9 @@ def best_mouth(mouth):
 	return [res]
 
 # Permet l'extraction des visages sur n'importe quelle photo et redimensionnent les visages trouves en NORM_W x NORM_H
-def normalisation(src):
+def normalisation(src, webcam=False):
+
+	res = []
 
 	# On fait une copie l'image pour le traitement (en gris)
 	gris = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_8U, 1)
@@ -176,9 +214,13 @@ def normalisation(src):
 
 		# On detecte au moins 2 yeux "normaux", au moins un oeil avec lunette, au moins une bouche et au moins un nez
 		if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ): 
-
 			print "Visage detecte dans la photo"
-			return normal
+			res.append((normal,(x,y,w,h)))
+		if(webcam):
+			return res
+		else:
+			return res[0]
+			
 
 # Traitement apres la normalisation (cad sur les images de visages en NORM_W x NORM_H)
 def arff(in_path, img, div=8):
