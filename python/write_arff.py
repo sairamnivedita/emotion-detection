@@ -30,7 +30,9 @@ class ArfFile:
         self.no_more_attribute = False
         self.FILE = None
     
-        
+    def no_more_data(self) :
+        self.FILE.close()
+
     def add_attribute_bool(self, nom):
         if self.no_more_attribute : 
             raise NameError('Instance has been written' +
@@ -79,10 +81,6 @@ class ArfFile:
         if (not self.no_more_attribute) : write_structure ()
         write_instance(dictionary)
             
-    
-    def no_more_data(self) :
-        self.FILE.close()
-
 
 # TEST :
 #print " TEST STRING : "
