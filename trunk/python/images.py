@@ -174,6 +174,7 @@ def normalisation(src):
 		#Detection oeil nez bouche sur l'image source:
 		d = detection(tmp)
 
+		# On detecte au moins 2 yeux "normaux", au moins un oeil avec lunette, au moins une bouche et au moins un nez
 		if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ): 
 
 			print "Visage detecte dans la photo"
