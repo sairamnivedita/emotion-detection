@@ -131,7 +131,7 @@ def webcam_comptage_pixel(img,div=8):
 	src = treatments(img)
 	largeur = NORM_W/div
 	hauteur = NORM_H/div
-
+	res = []
 	# div*div images de largeur NORM_W/div
 	for l in range(0, NORM_W, largeur):
 		for h in range(0, NORM_H, hauteur):
@@ -140,13 +140,13 @@ def webcam_comptage_pixel(img,div=8):
 				for h2 in range(hauteur):
 					# On prend le premier du pixel (niveau de gris => R=G=B
 					#print src[l+l2,h+h2]
-					if(src[l+l2,h+h2][0] > 128) : 
+					if(src[l+l2,h+h2] > 128) : 
 						nb_pixel += 1
 			res.append(nb_pixel)
 	return res
 
-def webcam_arff(file_name="cam.arff", src, div=8):
-
+def webcam_arff(src, file_name="cam.arff", div=8):
+	global arf
 	if not(os.path.exists(file_name)):
 		create_arff(file_name, "verdict", div)
 	else:
@@ -159,10 +159,24 @@ def webcam_arff(file_name="cam.arff", src, div=8):
 	#Detection oeil nez bouche sur l'image source:
 	d = detection(gris)
 
-	c = webcam_comptage_pixel(img)
-	fill_arff(d, img, c)	
+	c = webcam_comptage_pixel(gris)
+	webcam_fill_arff(d, c)	
 	arf.no_more_data()
 
+def webcam_fill_arff(d, c_pixels, div=8):
+
+	dic = dict()
+	for a in attr_list:
+		dic[a] = len(d[a])
+	for s in smile_list:
+		dic[s] = d[s]
+	for i in range(div*div):
+		dic["cpt_"+str(i)] = c_pixels[i]
+	dic["emotion"] = "?"
+	print dic
+	
+	arf.add_instance(dic)
+	
 def extracteur_de_sourires(nom, src):
 	img = cv.GetSubRect(src, (src.width*1/7, src.height*2/3, src.width*5/7, src.height/3)) 
 	cpt = 0
