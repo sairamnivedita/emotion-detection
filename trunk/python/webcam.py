@@ -13,8 +13,8 @@ def main_loop(process = None, key_pressed = None):
     # webcam ou truc dans le genre
     ###device = -1 # n'importe laquelle
     capture = cv.CreateCameraCapture(0)
-    cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 320)
-    cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 240)    
+    cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 800)
+    cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 600)    
  
     # si pas de webcam...
     if not capture:
@@ -39,14 +39,12 @@ def main_loop(process = None, key_pressed = None):
  
         # handle events
         k = cv.WaitKey(10)
+        if k == 0x20: # ESPACE
+            print 'ESPACE pressed. Computing.'
+            if key_pressed : frame = key_pressed(frame)
         if k == 0x1b: # ESC
             print 'ESC pressed. Exiting ...'
             cv.DestroyAllWindows()
             break  
-        if k == 0x20: # ESPACE
-            print 'ESPACE pressed. Computing.'
-            key_pressed(frame)
-            break  
-
 if __name__ == "__main__":
     main_loop()

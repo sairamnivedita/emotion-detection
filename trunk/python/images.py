@@ -98,8 +98,8 @@ def norm_loop(in_path, out_path):
 			src = cv.LoadImage(in_path+img)
 			print "Normalisation de l'image "+img+" en cours"
 			normal = normalisation(src)
-			if not normal == None:
-				save(out_path, "small."+img, normal)
+			for i,n in enumerate(normal) :
+				save(out_path, "small."+str(i)+img, n[0])
 	print "FIN NORMALISATION"
 
 # Boucle de traitements
@@ -145,19 +145,19 @@ def webcam_comptage_pixel(img,div=8):
 			res.append(nb_pixel)
 	return res
 
-def webcam_arff(src, file_name="cam.arff", div=8):
+def webcam_arff(gris, file_name="cam.arff", cascades=True, div=8):
 	global arf
 	if not(os.path.exists(file_name)):
-		create_arff(file_name, "verdict", div)
+		print "Recreation arff"
+		create_arff(file_name, "verdict", div,cascades)
 	else:
+		print "Ouverture arff"
 		arf = open(file_name, "w")
-	# On copie l'image pour le traitement (en gris)
-	gris = cv.CreateImage( (src.width, src.height) , cv.IPL_DEPTH_8U, 1)
-	cv.CvtColor(src, gris, cv.CV_BGR2GRAY )		
-	cv.EqualizeHist(gris, gris)
-
 	#Detection oeil nez bouche sur l'image source:
-	d = detection(gris)
+	if cascades:
+		d = detection(gris)
+	else:
+	    d = None
 
 	c = webcam_comptage_pixel(gris)
 	webcam_fill_arff(d, c)	
@@ -166,15 +166,15 @@ def webcam_arff(src, file_name="cam.arff", div=8):
 def webcam_fill_arff(d, c_pixels, div=8):
 
 	dic = dict()
-	for a in attr_list:
-		dic[a] = len(d[a])
-	for s in smile_list:
-		dic[s] = d[s]
+	if d:
+		for a in attr_list:
+			dic[a] = len(d[a])
+		for s in smile_list:
+			dic[s] = d[s]
 	for i in range(div*div):
 		dic["cpt_"+str(i)] = c_pixels[i]
 	dic["emotion"] = "?"
-	print dic
-	
+
 	arf.add_instance(dic)
 	
 def extracteur_de_sourires(nom, src):
@@ -204,7 +204,7 @@ def best_mouth(mouth):
 	return [res]
 
 # Permet l'extraction des visages sur n'importe quelle photo et redimensionnent les visages trouves en NORM_W x NORM_H
-def normalisation(src, webcam=False):
+def normalisation(src):
 
 	res = []
 
@@ -215,7 +215,7 @@ def normalisation(src, webcam=False):
 
 	# On detecte les visages (objects) sur l'image copiee
 	faces = cv.HaarDetectObjects(gris, face_path, cv.CreateMemStorage())
-
+	print "Nombre faces"+str(len(faces))
 	for (x,y,w,h),n in faces: 
 		tmp = cv.CreateImage( (w,h) , cv.IPL_DEPTH_8U, 1)
 		cv.GetRectSubPix(gris, tmp, (float(x + w/2), float(y + h/2)))
@@ -230,11 +230,8 @@ def normalisation(src, webcam=False):
 		if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ): 
 			print "Visage detecte dans la photo"
 			res.append((normal,(x,y,w,h)))
-		if(webcam):
-			return res
-		else:
-			return res[0]
-			
+	return res
+
 
 # Traitement apres la normalisation (cad sur les images de visages en NORM_W x NORM_H)
 def arff(in_path, img, div=8):
@@ -293,17 +290,18 @@ def emotion(file_name):
 	except:
 		return None
 
-def create_arff(file_name, arff_name, div=8):
+def create_arff(file_name, arff_name, div=8, d=True):
 	global arf
 	arf = write_arff.ArfFile(file_name, arff_name)
-	arf.add_attribute_numeric("eyes")
-	arf.add_attribute_numeric("eyes2")
-	arf.add_attribute_numeric("mouth")
-	arf.add_attribute_numeric("s_0")
-	arf.add_attribute_numeric("s_1")
-	arf.add_attribute_numeric("s_2")
-	arf.add_attribute_numeric("s_3")
-	arf.add_attribute_numeric("s_4")
+	if d:
+		arf.add_attribute_numeric("eyes")
+		arf.add_attribute_numeric("eyes2")
+		arf.add_attribute_numeric("mouth")
+		arf.add_attribute_numeric("s_0")
+		arf.add_attribute_numeric("s_1")
+		arf.add_attribute_numeric("s_2")
+		arf.add_attribute_numeric("s_3")
+		arf.add_attribute_numeric("s_4")
 	for i in range(div*div):
 		arf.add_attribute_numeric("cpt_"+str(i))
 	arf.add_attribute_enum("emotion", ["AN", "DI", "FE", "HA", "NE", "SA", "SU"])
