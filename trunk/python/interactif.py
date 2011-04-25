@@ -1,8 +1,10 @@
+#!/usr/bin/python
 import sys
 import cv
 import commands
-#export CLASSPATH=$CLASSPATH/usr/share/java/weka.jar
+
 #java weka.classifiers.functions.MultilayerPerceptron -l model/mlp_all.model -T save_arff/prof.arff -p 0
+#export CLASSPATH=$CLASSPATH/usr/share/java/weka.jar
 
 from pyfann import libfann
 import face_detect
@@ -22,6 +24,8 @@ emo_name = ["AN","DI","FE","HA","NE","SA","SU"]
 color_code = [display.rouge, display.vert, display.gris, display.jaune, display.noir, display.bleu, display.blanc]
 cv.NamedWindow('Photo')
 cv.NamedWindow('Norm')
+cv.NamedWindow('Percep')
+cv.NamedWindow('Thres')
 file_name ="cam" 
 def reco_et_detourage(img):
     # extrait des visages dans l'image
@@ -30,8 +34,10 @@ def reco_et_detourage(img):
     print faces
     if faces :
         cv.ShowImage('Norm', faces[0][0])
+        cv.ShowImage('Percep', images.ce_que_voit_le_perceptron(images.webcam_comptage_pixel(faces[0][0])))
+        cv.ShowImage('Thres', images.treatments(faces[0][0]) )
         for face,(x,y,w,h) in faces:
-            cv.SaveImage("../../norm/test"+ str(random.random()) +".jpg" , face)
+            #cv.SaveImage("../../norm/test"+ str(random.random()) +".jpg" , face)
             cv.Rectangle(img, (x,y), (x+w,y+h), display.clair)
             # On cree ou on rempli le arff avec les images prise par la webcam
             images.webcam_arff(face, file_name, False, div=8)

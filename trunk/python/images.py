@@ -5,7 +5,7 @@ import write_arff
 import commands
 import math
 import copy
-
+import random
 
 # Notre .arff est une variable global
 arf = None
@@ -160,6 +160,7 @@ def webcam_arff(gris, file_name="cam.arff", cascades=True, div=8):
 	    d = None
 
 	c = webcam_comptage_pixel(gris)
+	ce_que_voit_le_perceptron(c, div)
 	webcam_fill_arff(d, c)	
 	arf.no_more_data()
 
@@ -220,11 +221,12 @@ def normalisation(src):
 		tmp = cv.CreateImage( (w,h) , cv.IPL_DEPTH_8U, 1)
 		cv.GetRectSubPix(gris, tmp, (float(x + w/2), float(y + h/2)))
 
-		cv.EqualizeHist(tmp, tmp)
 		cv.Resize(tmp, normal)
+		cv.EqualizeHist(normal, normal)
+
 
 		#Detection oeil nez bouche sur l'image source:
-		d = detection(tmp)
+		d = detection(normal)
 
 		# On detecte au moins 2 yeux "normaux", au moins un oeil avec lunette, au moins une bouche et au moins un nez
 		if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ): 
@@ -276,6 +278,22 @@ def comptage_pixel(in_path, img,div=8):
 			res.append(nb_pixel)
 	return res
 
+def ce_que_voit_le_perceptron(data, div = 8):
+    div2 = div * div 
+    if len(data) == div2 :
+        gris = cv.CreateImage( (128,128) , cv.IPL_DEPTH_8U, 1)
+        facteur_couleur = 256 / div2
+        cot = 128 / div
+        for j in range(div) :
+            for i in range(div) :
+                coin_haut = (i * cot , j * cot )
+                coin_bas = (i * cot + cot -1, j * cot + cot -1 )
+                nvgris = data[i + j*8] * facteur_couleur
+                cv.Rectangle(gris, coin_haut, coin_bas, (nvgris,nvgris,nvgris), -1)
+        return gris
+    else : print "NAWAAAAAK!! ce_que_voit_le_perceptron(data, div) : len(data) must be div^2 " 
+
+
 # Renvoie l'emotion associee au nom de fichier : -
 # AN -> anger
 # DI -> disgust
@@ -308,7 +326,6 @@ def create_arff(file_name, arff_name, div=8, d=True):
 	print "Ouverture du fichier "+file_name+" reussie"
 
 def fill_arff(d, img_name, c_pixels, div=8):
-
 	dic = dict()
 	try:
 		e = emotion(img_name)
