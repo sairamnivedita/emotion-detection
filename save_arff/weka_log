@@ -313,3 +313,121 @@ Weighted Avg.    0.915     0.015      0.917     0.915     0.915      0.995
   0  2  0  0 67  3  1 |  e = NE
   1  3  0  0  1 46  1 |  f = SA
   1  1  0  0  0  1 65 |  g = SU
+  
+
+=== Run information ===
+
+Scheme:       weka.classifiers.trees.J48 -C 0.25 -M 2
+Relation:     emotions
+Instances:    217
+Attributes:   9
+              eyes
+              eyes2
+              mouth
+              s_0
+              s_1
+              s_2
+              s_3
+              s_4
+              emotion
+Test mode:    split 66.0% train, remainder test
+
+
+RESULTAT ORIGINAUX :
+
+=== Classifier model (full training set) ===
+
+J48 pruned tree
+Number of Leaves  : 	23
+Size of the tree : 	45
+Time taken to build model: 0.09 seconds
+
+=== Evaluation on test split ===
+=== Summary ===
+
+Correctly Classified Instances          26               35.1351 %
+Incorrectly Classified Instances        48               64.8649 %
+Kappa statistic                          0.2263
+Mean absolute error                      0.2041
+Root mean squared error                  0.3384
+Relative absolute error                 85.6635 %
+Root relative squared error             97.6585 %
+Total Number of Instances               74     
+
+=== Detailed Accuracy By Class ===
+
+               TP Rate   FP Rate   Precision   Recall  F-Measure   ROC Area  Class
+                 0         0          0         0         0          ?        AN
+                 0         0          0         0         0          0.541    DI
+                 0.214     0.017      0.75      0.214     0.333      0.72     FE
+                 0.917     0.129      0.579     0.917     0.71       0.955    HA
+                 0         0.103      0         0         0          0.546    NE
+                 0.25      0.113      0.3       0.25      0.273      0.571    SA
+                 0.818     0.413      0.257     0.818     0.391      0.686    SU
+Weighted Avg.    0.351     0.126      0.323     0.351     0.281      0.67 
+
+=== Confusion Matrix ===
+
+  a  b  c  d  e  f  g   <-- classified as
+  0  0  0  0  0  0  0 |  a = AN
+  0  0  0  0  2  1  6 |  b = DI
+  0  0  3  3  4  0  4 |  c = FE
+  0  0  0 11  0  1  0 |  d = HA
+  0  0  1  2  0  4  9 |  e = NE
+  0  0  0  2  0  3  7 |  f = SA
+  0  0  0  1  0  1  9 |  g = SU
+
+
+=== Run information ===
+
+Scheme:       weka.classifiers.functions.MultilayerPerceptron -L 0.3 -M 0.2 -N 500 -V 0 -S 0 -E 20 -H a
+Relation:     emotions
+Instances:    217
+Attributes:   9
+              eyes
+              eyes2
+              mouth
+              s_0
+              s_1
+              s_2
+              s_3
+              s_4
+              emotion
+Test mode:    split 66.0% train, remainder test
+
+=== Classifier model (full training set) ===
+Time taken to build model: 1.87 seconds
+=== Evaluation on test split ===
+=== Summary ===
+
+Correctly Classified Instances          22               29.7297 %
+Incorrectly Classified Instances        52               70.2703 %
+Kappa statistic                          0.147 
+Mean absolute error                      0.1969
+Root mean squared error                  0.3561
+Relative absolute error                 82.6202 %
+Root relative squared error            102.7591 %
+Total Number of Instances               74     
+
+=== Detailed Accuracy By Class ===
+
+               TP Rate   FP Rate   Precision   Recall  F-Measure   ROC Area  Class
+                 0         0          0         0         0          ?        AN
+                 0         0.092      0         0         0          0.644    DI
+                 0.429     0.117      0.462     0.429     0.444      0.704    FE
+                 0.833     0.113      0.588     0.833     0.69       0.927    HA
+                 0.125     0.293      0.105     0.125     0.114      0.495    NE
+                 0.167     0.161      0.167     0.167     0.167      0.567    SA
+                 0.182     0.079      0.286     0.182     0.222      0.74     SU
+Weighted Avg.    0.297     0.153      0.275     0.297     0.281      0.671
+
+=== Confusion Matrix ===
+
+  a  b  c  d  e  f  g   <-- classified as
+  0  0  0  0  0  0  0 |  a = AN
+  0  0  1  1  5  2  0 |  b = DI
+  0  1  6  2  3  2  0 |  c = FE
+  0  0  0 10  2  0  0 |  d = HA
+  0  1  3  2  2  6  2 |  e = NE
+  0  1  1  1  4  2  3 |  f = SA
+  0  3  2  1  3  0  2 |  g = SU
