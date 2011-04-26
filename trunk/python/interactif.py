@@ -7,7 +7,6 @@ import commands
 #export CLASSPATH=$CLASSPATH/usr/share/java/weka.jar
 
 from pyfann import libfann
-import face_detect
 import images
 import webcam
 import display
