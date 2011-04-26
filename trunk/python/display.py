@@ -1,3 +1,4 @@
+import cv
 
 # BLEU VERT ROUGE !
 bleu  = (255,0,0)

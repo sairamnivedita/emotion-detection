@@ -122,7 +122,7 @@ def arff_loop(in_path, file_name="fichier_arff", div=8):
 	create_arff(file_name, "emotions", div)
 	jpegs = jpg_list(in_path)
 	for img in jpegs:
-		arff(in_path, img)	
+		arff(in_path, img, div)	
 	arf.no_more_data()
 	print "Ecriture et fermeture du fichier arff terminees"
 
@@ -159,9 +159,9 @@ def webcam_arff(gris, file_name="cam.arff", cascades=True, div=8):
 	else:
 	    d = None
 
-	c = webcam_comptage_pixel(gris)
+	c = webcam_comptage_pixel(gris, div)
 	ce_que_voit_le_perceptron(c, div)
-	webcam_fill_arff(d, c)	
+	webcam_fill_arff(d, c, div)	
 	arf.no_more_data()
 
 def webcam_fill_arff(d, c_pixels, div=8):
@@ -247,8 +247,8 @@ def arff(in_path, img, div=8):
 	#Detection oeil nez bouche sur l'image source:
 	d = detection(gris)
 
-	c = comptage_pixel(in_path, img)
-	fill_arff(d, img, c)	
+	c = comptage_pixel(in_path, img, div)
+	fill_arff(d, img, c, div)	
 
 def treatments(img):
 
@@ -264,10 +264,9 @@ def comptage_pixel(in_path, img,div=8):
 	src = cv.LoadImageM(in_path+img, 1)
 	largeur = NORM_W/div
 	hauteur = NORM_H/div
-
 	# div*div images de largeur NORM_W/div
-	for l in range(0, NORM_W, largeur):
-		for h in range(0, NORM_H, hauteur):
+	for l in range(0, NORM_W-largeur+1, largeur):
+		for h in range(0, NORM_H-hauteur+1, hauteur):
 			nb_pixel = 0
 			for l2 in range(largeur):
 				for h2 in range(hauteur):
@@ -282,13 +281,13 @@ def ce_que_voit_le_perceptron(data, div = 8):
     div2 = div * div 
     if len(data) == div2 :
         gris = cv.CreateImage( (128,128) , cv.IPL_DEPTH_8U, 1)
-        facteur_couleur = 256 / div2
         cot = 128 / div
+        facteur_couleur = 256 / (cot*cot)
         for j in range(div) :
             for i in range(div) :
                 coin_haut = (i * cot , j * cot )
                 coin_bas = (i * cot + cot -1, j * cot + cot -1 )
-                nvgris = data[i + j*8] * facteur_couleur
+                nvgris = data[i + j*div] * facteur_couleur
                 cv.Rectangle(gris, coin_haut, coin_bas, (nvgris,nvgris,nvgris), -1)
         return gris
     else : print "NAWAAAAAK!! ce_que_voit_le_perceptron(data, div) : len(data) must be div^2 " 
@@ -340,7 +339,7 @@ def fill_arff(d, img_name, c_pixels, div=8):
 	for i in range(div*div):
 		dic["cpt_"+str(i)] = c_pixels[i]
 	print dic
-	arf.add_instance(dic)        
+	arf.add_instance(dic)
 	print img_name+" : "+e
 
 
