@@ -12,6 +12,8 @@ import webcam
 import display
 import random
 
+DIV = 16
+
 AN = 0
 DI = 1
 FE = 2
@@ -33,15 +35,18 @@ def reco_et_detourage(img):
     print faces
     if faces :
         cv.ShowImage('Norm', faces[0][0])
-        cv.ShowImage('Percep', images.ce_que_voit_le_perceptron(images.webcam_comptage_pixel(faces[0][0])))
+        cv.ShowImage('Percep', images.ce_que_voit_le_perceptron(images.webcam_comptage_pixel(faces[0][0], DIV), DIV))
         cv.ShowImage('Thres', images.treatments(faces[0][0]) )
         for face,(x,y,w,h) in faces:
             #cv.SaveImage("../../norm/test"+ str(random.random()) +".jpg" , face)
             cv.Rectangle(img, (x,y), (x+w,y+h), display.clair)
             # On cree ou on rempli le arff avec les images prise par la webcam
-            images.webcam_arff(face, file_name, False, div=8)
-            liste = commands.getoutput("java weka.classifiers.functions.MultilayerPerceptron -l model/mlp_seuil.model -T ./"+ file_name +".arff -p 0")
+            images.webcam_arff(face, file_name, False, div=DIV)
+            liste = commands.getoutput("java weka.classifiers.functions.MultilayerPerceptron -l model/mlp_div"+str(DIV)+"_seuil.model -T ./"+ file_name +".arff -p 0")
             print liste
+        # Affichage oeil nez bouche
+        #ffs = images.detection(img)
+        #display.display(img, ffs['eyes'], ffs['eyes2'], ffs['nose'], ffs['mouth'])
         cv.ShowImage('Photo', img)
     return img
 
