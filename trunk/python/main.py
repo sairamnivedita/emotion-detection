@@ -13,7 +13,7 @@ def main():
 	#images.treatment_loop("../../norm/", "../../traitement/")
 
 	# --- Arff --- #
-	images.arff_loop("../../traitement/", "weka_div9", div=9)
+	images.arff_loop("../../traitement/", "fullcorpus_weka_div16", div=16)
 
 
 if __name__ == "__main__":
