@@ -92,14 +92,16 @@ def norm_loop(in_path, out_path):
 	jpegs = jpg_list(in_path)
 	print "NORMALISATION"
 	for img in jpegs:
-		if(os.path.exists(out_path+"small."+img)):
+		print "\n"
+		print out_path+"small0."+img
+		if(os.path.exists(out_path+"small0."+img)):
 			print "L'image "+img+" est deja normalisee"
 		else:
 			src = cv.LoadImage(in_path+img)
 			print "Normalisation de l'image "+img+" en cours"
 			normal = normalisation(src)
 			for i,n in enumerate(normal) :
-				save(out_path, "small."+str(i)+img, n[0])
+				save(out_path, "small"+str(i)+"."+img, n[0])
 	print "FIN NORMALISATION"
 
 # Boucle de traitements
@@ -190,8 +192,7 @@ def extracteur_de_sourires(nom, src):
 			cv.SaveImage(result+str(cpt)+"s_"+nom, img)
 
 def save(path, nom, img):
-	print "Sauvegarde de l'image:"
-	print path+nom
+	print "Sauvegarde de l'image : "+path+nom
 	cv.SaveImage(path+nom, img)
 
 def best_mouth(mouth):
@@ -216,7 +217,8 @@ def normalisation(src):
 
 	# On detecte les visages (objects) sur l'image copiee
 	faces = cv.HaarDetectObjects(gris, face_path, cv.CreateMemStorage())
-	print "Nombre faces"+str(len(faces))
+	print "Nombre faces detectes : "+str(len(faces))
+	cp = 0
 	for (x,y,w,h),n in faces: 
 		tmp = cv.CreateImage( (w,h) , cv.IPL_DEPTH_8U, 1)
 		cv.GetRectSubPix(gris, tmp, (float(x + w/2), float(y + h/2)))
@@ -229,9 +231,10 @@ def normalisation(src):
 		d = detection(normal)
 
 		# On detecte au moins 2 yeux "normaux", au moins un oeil avec lunette, au moins une bouche et au moins un nez
-		if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ): 
+		if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 or cp==0): 
 			print "Visage detecte dans la photo"
 			res.append((normal,(x,y,w,h)))
+		cp+=1
 	return res
 
 
