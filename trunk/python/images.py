@@ -94,14 +94,14 @@ def norm_loop(in_path, out_path):
 	for img in jpegs:
 		print "\n"
 		print out_path+"small0."+img
-		if(os.path.exists(out_path+"small0."+img)):
+		if(os.path.exists(out_path+"small_0."+img)):
 			print "L'image "+img+" est deja normalisee"
 		else:
 			src = cv.LoadImage(in_path+img)
 			print "Normalisation de l'image "+img+" en cours"
 			normal = normalisation(src)
 			for i,n in enumerate(normal) :
-				save(out_path, "small"+str(i)+"."+img, n[0])
+				save(out_path, "small_"+str(i)+"."+img, n[0])
 	print "FIN NORMALISATION"
 
 # Boucle de traitements
