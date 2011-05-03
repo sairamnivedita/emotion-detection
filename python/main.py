@@ -10,10 +10,11 @@ def main():
 	#images.norm_loop("../../images/", "../../norm/")
 
 	# --- Traitements --- #
-	#images.treatment_loop("../../norm/", "../../traitement/")
+	images.treatment_loop("../../norm/", "../../traitement/")
 
 	# --- Arff --- #
-	images.arff_loop("../../traitement/", "fullcorpus_weka_div16", div=16)
+	for i in range(8,16):
+		images.arff_loop("../../traitement/", "fullcorpus_weka_div"+str(i), div=i)
 
 
 if __name__ == "__main__":
