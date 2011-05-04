@@ -7,7 +7,7 @@ def main():
 	save = False
 
 	#--- Normalisation --- #
-	images.norm_loop("../../images/", "../../norm/")
+	#images.norm_loop("../../images/", "../../norm/")
 
 	# --- Traitements --- #
 	images.treatment_loop("../../norm/", "../../traitement/")
