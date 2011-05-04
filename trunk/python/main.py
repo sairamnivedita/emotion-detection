@@ -13,7 +13,7 @@ def main():
 	images.treatment_loop("../../norm/", "../../traitement/")
 
 	# --- Arff --- #
-	for i in range(8,16):
+	for i in range(2,8):
 		images.arff_loop("../../traitement/", "fullcorpus_weka_div"+str(i), div=i)
 
 
