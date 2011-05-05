@@ -218,7 +218,6 @@ def normalisation(src):
 	# On detecte les visages (objects) sur l'image copiee
 	faces = cv.HaarDetectObjects(gris, face_path, cv.CreateMemStorage())
 	print "Nombre faces detectes : "+str(len(faces))
-	cp = 0
 	for (x,y,w,h),n in faces: 
 		tmp = cv.CreateImage( (w,h) , cv.IPL_DEPTH_8U, 1)
 		cv.GetRectSubPix(gris, tmp, (float(x + w/2), float(y + h/2)))
@@ -231,10 +230,9 @@ def normalisation(src):
 		d = detection(normal)
 
 		# On detecte au moins 2 yeux "normaux", au moins un oeil avec lunette, au moins une bouche et au moins un nez
-		if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 or cp==0): 
+		if( (len(d['eyes'])>=2 or len(d['eyes2'])>=1) and len(d['mouth'])>=1 and len(d['nose'])>=1 ) : 
 			print "Visage detecte dans la photo"
 			res.append((normal,(x,y,w,h)))
-		cp+=1
 	return res
 
 
